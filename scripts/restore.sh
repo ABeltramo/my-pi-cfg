@@ -36,7 +36,7 @@ cp "$ROOT/npm/package-lock.json" "$PI_DIR/npm/package-lock.json"
 
 (
   cd "$PI_DIR/npm"
-  npm ci --omit=dev
+  npm ci --omit=dev --legacy-peer-deps
 )
 
 printf 'Restored Pi configuration to %s.\n' "$PI_DIR"
