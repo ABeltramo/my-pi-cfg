@@ -30,6 +30,7 @@ const EMPTY_COSTS: CostTotals = {
 
 const GIT_REFRESH_MS = 10_000;
 const COST_REFRESH_MS = 60_000;
+const CLAUDE_REFRESH_MS = 600_000;
 const MONTHLY_CAP = readNumber(process.env.PI_MONTHLY_CAP ?? process.env.CLAUDE_MONTHLY_CAP, 300);
 
 function readNumber(value: string | undefined, fallback: number): number {
@@ -190,6 +191,7 @@ export default function (pi: ExtensionAPI) {
   let repoRefreshActive = false;
   let costRefreshActive = false;
   let claudeRefreshActive = false;
+  let lastClaudeRefresh = 0;
 
   const refreshRepo = async (cwd: string) => {
     if (repoRefreshActive) return;
@@ -217,8 +219,10 @@ export default function (pi: ExtensionAPI) {
     }
   };
 
-  const refreshClaudeMonth = async () => {
+  const refreshClaudeMonth = async (force = false) => {
     if (claudeRefreshActive) return;
+    if (!force && Date.now() - lastClaudeRefresh < CLAUDE_REFRESH_MS) return;
+    lastClaudeRefresh = Date.now();
     claudeRefreshActive = true;
     try {
       claudeMonth = await loadClaudeMonth(pi);
@@ -246,7 +250,7 @@ export default function (pi: ExtensionAPI) {
 
       void refreshRepo(ctx.cwd);
       void refreshCosts();
-      void refreshClaudeMonth();
+      void refreshClaudeMonth(true);
 
       const renderRow = (value: string, width: number): string => {
         const contentWidth = Math.max(1, width - 4);
