@@ -1,0 +1,20 @@
+{
+  "defaultModel": "gpt-5.6-luna",
+  "defaultProvider": "openai",
+  "defaultThinkingLevel": "xhigh",
+  "hideThinkingBlock": false,
+  "litellm": {
+    "mcp": {
+      "enabled": false
+    },
+    "skills": {
+      "enabled": false
+    }
+  },
+  "packages": [
+    "npm:pi-web-access@0.23.0",
+    "npm:pi-mcp-adapter@2.26.0",
+    "npm:pi-provider-litellm@2.3.0"
+  ],
+  "theme": "dark"
+}

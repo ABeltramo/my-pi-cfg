@@ -1,0 +1,26 @@
+# Credentials and private configuration
+/auth.json
+/web-search.json
+/mcp.json
+/.mcp.json
+/.env
+/.env.*
+!.env.example
+**/settings.local.json
+**/credentials*.json
+**/*secret*
+
+# Pi runtime state and caches
+/sessions/
+/models-store.json
+/mcp-cache.json
+/mcp-onboarding.json
+/web-search-cache/
+/bin/
+
+# Installed dependencies
+**/node_modules/
+
+# Operating-system and editor files
+.DS_Store
+.idea/

@@ -1,0 +1,57 @@
+{
+  "providers": {
+    "openai": {
+      "modelOverrides": {
+        "gpt-5.6-luna": {
+          "contextWindow": 1050000
+        },
+        "gpt-5.6-sol": {
+          "contextWindow": 1050000
+        },
+        "gpt-5.6-terra": {
+          "contextWindow": 1050000
+        }
+      }
+    },
+    "litellm": {
+      "modelOverrides": {
+        "gemma-4-26b": {
+          "reasoning": true,
+          "contextWindow": 262144,
+          "thinkingLevelMap": {
+            "off": "none",
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "compat": {
+            "supportsDeveloperRole": false,
+            "supportsReasoningEffort": false,
+            "thinkingFormat": "qwen-chat-template"
+          }
+        },
+        "qwen-3.8-27b": {
+          "reasoning": true,
+          "contextWindow": 262144,
+          "thinkingLevelMap": {
+            "off": "none",
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "compat": {
+            "supportsDeveloperRole": false,
+            "supportsReasoningEffort": false,
+            "thinkingFormat": "qwen-chat-template"
+          }
+        }
+      }
+    }
+  }
+}

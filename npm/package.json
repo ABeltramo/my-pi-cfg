@@ -1,0 +1,9 @@
+{
+  "name": "pi-extensions",
+  "private": true,
+  "dependencies": {
+    "pi-mcp-adapter": "^2.26.0",
+    "pi-provider-litellm": "^2.3.0",
+    "pi-web-access": "^0.23.0"
+  }
+}
