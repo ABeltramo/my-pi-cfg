@@ -132,7 +132,7 @@ async function loadClaudeMonth(pi: ExtensionAPI): Promise<number | null> {
     "else",
     "exit 127",
     "fi",
-  ].join(" ");
+  ].join("\n");
   const result = await pi.exec("sh", ["-lc", command], { timeout: 120_000 });
   if (result.code !== 0 || result.stdout.trim() === "") return null;
 
