@@ -15,11 +15,15 @@ The repository does not contain credentials, sessions, caches, or `node_modules`
   - `pi-web-access@0.23.0`
   - `pi-mcp-adapter@2.26.0`
   - `pi-provider-litellm@2.3.0`
-- Custom extension: `confirm-commands`
+- Custom extensions: `confirm-commands` and the Pi port of [claude-status](https://github.com/ABeltramo/claude-status)
 - Global output style: Simple English from [AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish)
 
 Package versions are pinned in `settings.json`.
 The exact npm dependency tree is in `npm/package-lock.json`.
+
+The `claude-status` project targets Claude Code and consumes Claude statusline JSON.
+`extensions/claude-status.ts` provides the equivalent Pi footer.
+It uses Pi session data for model, context, and cost values.
 
 ## Symlink layout
 
