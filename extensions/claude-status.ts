@@ -13,8 +13,6 @@ type RepoStats = {
 };
 
 type CostTotals = {
-  today: number;
-  week: number;
   month: number;
 };
 
@@ -27,14 +25,12 @@ const EMPTY_REPO: RepoStats = {
 };
 
 const EMPTY_COSTS: CostTotals = {
-  today: 0,
-  week: 0,
   month: 0,
 };
 
 const GIT_REFRESH_MS = 10_000;
 const COST_REFRESH_MS = 60_000;
-const MONTHLY_CAP = readNumber(process.env.PI_MONTHLY_CAP ?? process.env.CLAUDE_MONTHLY_CAP, 500);
+const MONTHLY_CAP = readNumber(process.env.PI_MONTHLY_CAP ?? process.env.CLAUDE_MONTHLY_CAP, 300);
 
 function readNumber(value: string | undefined, fallback: number): number {
   if (value === undefined || value.trim() === "") return fallback;
@@ -89,13 +85,6 @@ function addEntryCost(totals: CostTotals, entry: SessionEntry, now: Date): void 
   if (Number.isNaN(timestamp.getTime())) return;
 
   const key = dateKey(timestamp);
-  const today = dateKey(now);
-  const weekStart = new Date(now);
-  weekStart.setHours(0, 0, 0, 0);
-  weekStart.setDate(weekStart.getDate() - 6);
-
-  if (key === today) totals.today += cost;
-  if (timestamp >= weekStart) totals.week += cost;
   if (key.startsWith(monthKey(now))) totals.month += cost;
 }
 
@@ -119,6 +108,38 @@ async function loadCostTotals(): Promise<CostTotals> {
   );
 
   return totals;
+}
+
+function parseClaudeMonth(output: string): number {
+  const payload = JSON.parse(output) as {
+    daily?: Array<{ period?: unknown; totalCost?: unknown }>;
+  };
+  const currentMonth = monthKey(new Date());
+  return (payload.daily ?? []).reduce((total, entry) => {
+    if (typeof entry.period !== "string" || !entry.period.startsWith(currentMonth)) return total;
+    const cost = typeof entry.totalCost === "number" ? entry.totalCost : Number(entry.totalCost);
+    return Number.isFinite(cost) ? total + cost : total;
+  }, 0);
+}
+
+async function loadClaudeMonth(pi: ExtensionAPI): Promise<number | null> {
+  const command = [
+    "if command -v bunx >/dev/null 2>&1; then",
+    "bunx ccusage@latest daily --mode calculate --json",
+    "elif command -v npx >/dev/null 2>&1; then",
+    "npx --yes ccusage@latest daily --mode calculate --json",
+    "else",
+    "exit 127",
+    "fi",
+  ].join(" ");
+  const result = await pi.exec("sh", ["-lc", command], { timeout: 120_000 });
+  if (result.code !== 0 || result.stdout.trim() === "") return null;
+
+  try {
+    return parseClaudeMonth(result.stdout);
+  } catch {
+    return null;
+  }
 }
 
 function parseNumstat(output: string): Pick<RepoStats, "files" | "added" | "deleted"> {
@@ -165,8 +186,10 @@ export default function (pi: ExtensionAPI) {
   let requestRender = () => {};
   let repoStats = { ...EMPTY_REPO };
   let costTotals = { ...EMPTY_COSTS };
+  let claudeMonth: number | null = null;
   let repoRefreshActive = false;
   let costRefreshActive = false;
+  let claudeRefreshActive = false;
 
   const refreshRepo = async (cwd: string) => {
     if (repoRefreshActive) return;
@@ -194,6 +217,19 @@ export default function (pi: ExtensionAPI) {
     }
   };
 
+  const refreshClaudeMonth = async () => {
+    if (claudeRefreshActive) return;
+    claudeRefreshActive = true;
+    try {
+      claudeMonth = await loadClaudeMonth(pi);
+    } catch {
+      claudeMonth = null;
+    } finally {
+      claudeRefreshActive = false;
+      requestRender();
+    }
+  };
+
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.mode !== "tui") return;
 
@@ -203,10 +239,14 @@ export default function (pi: ExtensionAPI) {
         void refreshRepo(ctx.cwd);
       });
       const gitTimer = setInterval(() => void refreshRepo(ctx.cwd), GIT_REFRESH_MS);
-      const costTimer = setInterval(() => void refreshCosts(), COST_REFRESH_MS);
+      const costTimer = setInterval(() => {
+        void refreshCosts();
+        void refreshClaudeMonth();
+      }, COST_REFRESH_MS);
 
       void refreshRepo(ctx.cwd);
       void refreshCosts();
+      void refreshClaudeMonth();
 
       const renderRow = (value: string, width: number): string => {
         const contentWidth = Math.max(1, width - 4);
@@ -250,9 +290,12 @@ export default function (pi: ExtensionAPI) {
           const contextText = usage?.percent == null ? `?% of ${contextLabel}` : `${percent}% of ${contextLabel}`;
           const barColor = percent >= 90 ? "error" : percent >= 70 ? "warning" : "success";
           const session = sessionCost(ctx.sessionManager.getBranch());
-          const capPercent = MONTHLY_CAP > 0 ? Math.floor((costTotals.month / MONTHLY_CAP) * 100) : 0;
+          const totalMonth = claudeMonth === null ? null : costTotals.month + claudeMonth;
+          const capPercent = totalMonth === null || MONTHLY_CAP <= 0 ? 0 : Math.floor((totalMonth / MONTHLY_CAP) * 100);
           const costColor = capPercent >= 90 ? "error" : capPercent >= 70 ? "warning" : "success";
-          let costs = `${theme.fg("warning", "💰")} ${formatUsd(session)} · 1d ${formatUsd(costTotals.today)} · 7d ${formatUsd(costTotals.week)} · ${theme.fg(costColor, formatUsd(costTotals.month))}/${formatUsd(MONTHLY_CAP)}`;
+          const claudeText = claudeMonth === null ? "?" : formatUsd(claudeMonth);
+          const totalText = totalMonth === null ? "?" : formatUsd(totalMonth);
+          let costs = `${theme.fg("warning", "💰")} session ${formatUsd(session)} · pi ${formatUsd(costTotals.month)} · claude ${claudeText} · ${theme.fg(costColor, `total ${totalText}`)}/${formatUsd(MONTHLY_CAP)}`;
           const extensionStatuses = Array.from(footerData.getExtensionStatuses().values()).filter(Boolean).join(" · ");
           if (extensionStatuses) costs += ` · ${extensionStatuses}`;
 
@@ -280,5 +323,6 @@ export default function (pi: ExtensionAPI) {
   pi.on("turn_end", () => {
     requestRender();
     void refreshCosts();
+    void refreshClaudeMonth();
   });
 }
