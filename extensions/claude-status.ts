@@ -155,6 +155,10 @@ function progressBar(percent: number): string {
   return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
+function compactMcpStatus(status: string): string {
+  return status.replace(/((?:🔌\s+)?MCP:)\s*(\d+)\s+servers?\s+enabled/, "$1$2");
+}
+
 export default function (pi: ExtensionAPI) {
   let requestRender = () => {};
   let repoStats = { ...EMPTY_REPO };
@@ -234,6 +238,9 @@ export default function (pi: ExtensionAPI) {
         render(width: number): string[] {
           const branch = footerData.getGitBranch();
           const project = basename(ctx.cwd) || ctx.cwd;
+          const extensionStatuses = Array.from(footerData.getExtensionStatuses().values()).filter(Boolean);
+          const mcpStatus = extensionStatuses.find((status) => status.includes("MCP:"));
+          const otherExtensionStatuses = extensionStatuses.filter((status) => status !== mcpStatus);
           let repo = project;
           if (branch) {
             repo += ` ${theme.fg("accent", branch)}`;
@@ -243,6 +250,7 @@ export default function (pi: ExtensionAPI) {
               repo += ` ${repoStats.files}f ${theme.fg("success", `+${repoStats.added}`)} ${theme.fg("error", `-${repoStats.deleted}`)}`;
             }
           }
+          if (mcpStatus) repo += ` · ${compactMcpStatus(mcpStatus)}`;
 
           const model = ctx.model?.name ?? ctx.model?.id ?? "no-model";
           const effort = ctx.thinkingLevel ?? "default";
@@ -260,8 +268,7 @@ export default function (pi: ExtensionAPI) {
           const claudeText = monthTotals === null ? "?" : formatUsd(monthTotals.claude);
           const totalText = totalMonth === null ? "?" : formatUsd(totalMonth);
           let costs = `${theme.fg("warning", "💰")} session ${formatUsd(session)} · pi ${piText} · claude ${claudeText} · ${theme.fg(costColor, `total ${totalText}`)}/${formatUsd(MONTHLY_CAP)}`;
-          const extensionStatuses = Array.from(footerData.getExtensionStatuses().values()).filter(Boolean).join(" · ");
-          if (extensionStatuses) costs += ` · ${extensionStatuses}`;
+          if (otherExtensionStatuses.length > 0) costs += ` · ${otherExtensionStatuses.join(" · ")}`;
 
           const stats = `${model} ${effort} ${theme.fg("dim", "│")} ${theme.fg(barColor, `${progressBar(percent)} ${contextText}`)} ${theme.fg("dim", "│")} ${costs}`;
           const rows = [repo, stats];

@@ -37,6 +37,7 @@ It uses `ccusage --by-agent` for both monthly cost values.
 | `~/.pi/agent/extensions` | `extensions/` |
 | `~/.pi/agent/npm/package.json` | `npm/package.json` |
 | `~/.pi/agent/npm/package-lock.json` | `npm/package-lock.json` |
+| `~/.config/mcp/mcp.json` | `mcp.json` |
 
 The npm packages stay in `~/.pi/agent/npm/node_modules`.
 The repository ignores that directory.
@@ -129,12 +130,11 @@ These files stay on the local machine:
 
 - `auth.json`
 - `web-search.json`
-- MCP configuration files
 - Session history
 - `models-store.json`
 - MCP caches
 - `node_modules`
 
-MCP configuration often contains credentials or private endpoints.
-Add a sanitized example file if MCP servers become part of this setup.
-Use environment-variable references instead of literal secrets.
+`mcp.json` contains the global MCP server definitions.
+Do not add credentials or private tokens to this file.
+Use environment-variable references for secrets.

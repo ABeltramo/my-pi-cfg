@@ -1,7 +1,6 @@
 # Credentials and private configuration
 /auth.json
 /web-search.json
-/mcp.json
 /.mcp.json
 /.env
 /.env.*

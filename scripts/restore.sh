@@ -57,12 +57,27 @@ link_path() {
   ln -s "$source" "$target"
 }
 
+link_external_path() {
+  local relative="$1"
+  local target="$2"
+  local source="$ROOT/$relative"
+
+  if [[ -L "$target" && "$(readlink "$target")" == "$source" ]]; then
+    return
+  fi
+
+  backup_existing "$target" "global-mcp.json"
+  mkdir -p "$(dirname "$target")"
+  ln -s "$source" "$target"
+}
+
 link_path "settings.json"
 link_path "models.json"
 link_path "APPEND_SYSTEM.md"
 link_path "extensions"
 link_path "npm/package.json"
 link_path "npm/package-lock.json"
+link_external_path "mcp.json" "$HOME/.config/mcp/mcp.json"
 
 if [[ "$SKIP_NPM_INSTALL" == true ]]; then
   printf 'Skipped npm package installation.\n'
