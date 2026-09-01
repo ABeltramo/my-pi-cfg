@@ -36,6 +36,8 @@ Then restore this configuration:
 ./scripts/restore.sh
 ```
 
+If the target already has a Pi configuration, make a backup and use `./scripts/restore.sh --force`.
+
 The script copies the settings, model overrides, system prompt, and extensions.
 It also installs the pinned npm dependencies.
 
