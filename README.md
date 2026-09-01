@@ -24,8 +24,8 @@ The exact npm dependency tree is in `npm/package-lock.json`.
 The `claude-status` project targets Claude Code and consumes Claude statusline JSON.
 `extensions/claude-status.ts` provides the equivalent Pi footer.
 Its cost segment shows `session`, `pi`, `claude`, and combined `total` monthly spend.
-It uses Pi session data for model, context, and Pi cost values.
-It uses `ccusage` for Claude monthly cost.
+It uses Pi session data for the current session, model, and context values.
+It uses `ccusage --by-agent` for both monthly cost values.
 
 ## Symlink layout
 
