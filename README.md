@@ -7,7 +7,6 @@ The repository does not contain credentials, sessions, caches, or `node_modules`
 
 ## Current setup
 
-- Pi version: `0.84.2`
 - Default provider: `openai`
 - Default model: `gpt-5.6-luna`
 - Default thinking level: `xhigh`
@@ -39,10 +38,9 @@ The repository ignores that directory.
 ## Restore on a new machine
 
 Install Pi first.
-Use the version in `pi-version.txt`.
 
 ```bash
-npm install --global --ignore-scripts @earendil-works/pi-coding-agent@0.84.2
+npm install --global --ignore-scripts @earendil-works/pi-coding-agent
 ```
 
 Then create the symlinks and install the packages:
@@ -118,7 +116,6 @@ Commit the changed `settings.json` and lockfile after the update.
 | `npm/package-lock.json` | Exact npm dependency versions |
 | `scripts/restore.sh` | Create symlinks and restore packages |
 | `scripts/check-secrets.sh` | Check staged files for common credential patterns |
-| `simple-english-commit.txt` | Upstream commit used for the Simple English prompt |
 
 ## Intentionally excluded
 
