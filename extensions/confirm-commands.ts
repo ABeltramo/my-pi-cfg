@@ -62,6 +62,8 @@ export default function (pi: ExtensionAPI) {
     }
   };
 
+  let allowAllToolCallsUntilTextReply = false;
+
   const isAllowed = (command: string, allowList: string[]): boolean => {
     return allowList.some(pattern => {
       const match = pattern.match(/^(\w+)\((.*)\)$/);
@@ -79,7 +81,28 @@ export default function (pi: ExtensionAPI) {
     });
   };
 
+  pi.on("message_end", (event) => {
+    if (event.message.role !== "assistant") {
+      return;
+    }
+
+    const hasTextReply = event.message.content.some(
+      (block) => block.type === "text" && block.text.trim().length > 0
+    );
+    if (hasTextReply) {
+      allowAllToolCallsUntilTextReply = false;
+    }
+  });
+
+  pi.on("agent_end", () => {
+    allowAllToolCallsUntilTextReply = false;
+  });
+
   pi.on("tool_call", async (event, ctx) => {
+    if (allowAllToolCallsUntilTextReply) {
+      return;
+    }
+
     if (isToolCallEventType("bash", event)) {
       const command = event.input.command;
       const settingsPath = getSettingsPath(ctx.cwd);
@@ -95,16 +118,34 @@ export default function (pi: ExtensionAPI) {
         "Bash Command Permission",
         [
           "Yes (Run once)",
+          "Yes (Run until text reply)",
           "No (Cancel)",
           "Always allow (Edit pattern)",
         ]
       ) as string;
 
-      // Handle cancellation (Esc/Ctrl+C)
+      if (action === "Yes (Run until text reply)") {
+        allowAllToolCallsUntilTextReply = true;
+        return;
+      }
+
+      // Handle cancellation (Esc/Ctrl+C) and explicit denial.
       if (!action || action === "No (Cancel)") {
+        let reason = "";
+
+        if (action === "No (Cancel)") {
+          const enteredReason = await ctx.ui.input(
+            "Why are you denying this command? (optional)",
+            "Tell the agent what it must do instead..."
+          );
+          reason = enteredReason?.trim() ?? "";
+        }
+
         return {
           block: true,
-          reason: "User denied permission for this command."
+          reason: reason
+            ? `User denied permission for this command. Reason: ${reason}`
+            : "User denied permission for this command."
         };
       }
 
