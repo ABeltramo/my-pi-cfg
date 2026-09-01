@@ -1,8 +1,9 @@
 # Pi configuration
 
-This repository tracks the portable parts of my Pi setup.
+This repository is the source of truth for portable Pi configuration.
+Symlinks connect Pi global files to this repository.
 
-It does not track credentials, sessions, model discovery caches, or installed `node_modules`.
+The repository does not contain credentials, sessions, caches, or `node_modules`.
 
 ## Current setup
 
@@ -19,7 +20,21 @@ It does not track credentials, sessions, model discovery caches, or installed `n
 - Global output style: Simple English from [AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish)
 
 Package versions are pinned in `settings.json`.
-The exact npm dependency tree is tracked in `npm/package-lock.json`.
+The exact npm dependency tree is in `npm/package-lock.json`.
+
+## Symlink layout
+
+| Pi path | Repository path |
+| --- | --- |
+| `~/.pi/agent/settings.json` | `settings.json` |
+| `~/.pi/agent/models.json` | `models.json` |
+| `~/.pi/agent/APPEND_SYSTEM.md` | `APPEND_SYSTEM.md` |
+| `~/.pi/agent/extensions` | `extensions/` |
+| `~/.pi/agent/npm/package.json` | `npm/package.json` |
+| `~/.pi/agent/npm/package-lock.json` | `npm/package-lock.json` |
+
+The npm packages stay in `~/.pi/agent/npm/node_modules`.
+The repository ignores that directory.
 
 ## Restore on a new machine
 
@@ -30,18 +45,24 @@ Use the version in `pi-version.txt`.
 npm install --global --ignore-scripts @earendil-works/pi-coding-agent@0.84.2
 ```
 
-Then restore this configuration:
+Then create the symlinks and install the packages:
 
 ```bash
+cd ~/repos/my-pi-cfg
 ./scripts/restore.sh
 ```
 
-If the target already has a Pi configuration, make a backup and use `./scripts/restore.sh --force`.
+If the target already has Pi configuration, make a backup first.
+Then run:
 
-The script copies the settings, model overrides, system prompt, and extensions.
-It also installs the pinned npm dependencies.
+```bash
+./scripts/restore.sh --force
+```
 
-The script does not copy credentials.
+The script moves replaced portable files to `~/.pi/agent/backups/my-pi-cfg/`.
+It never changes `auth.json`.
+It installs npm packages when the required versions are not present.
+
 Authenticate separately:
 
 ```text
@@ -51,15 +72,29 @@ Authenticate separately:
 
 You can also provide credentials through environment variables.
 
-The restore script uses `PI_CODING_AGENT_DIR` when you set it.
+The script uses `PI_CODING_AGENT_DIR` when you set it.
 Otherwise, it uses `~/.pi/agent`.
 
-## Update the tracked snapshot
+## Apply the repository to the current machine
 
-After changing Pi settings or installing a package, run:
+Run this command when the repository is the source of truth:
 
 ```bash
-./scripts/snapshot.sh
+./scripts/restore.sh --force --skip-npm-install
+```
+
+Use `/reload` in the active Pi session after the command.
+Restart Pi after package changes.
+
+## Manage the configuration
+
+Edit files in this repository.
+Pi writes changes through the symlinks into this repository.
+
+After a change, review and commit it:
+
+```bash
+git diff
 git add .
 ./scripts/check-secrets.sh
 git diff --cached --check
@@ -67,10 +102,9 @@ git diff --cached
 git commit -m "Update Pi configuration"
 ```
 
-The snapshot script reads only portable configuration.
-It never reads `auth.json`.
-
-Review the diff before every commit.
+Do not run `pi update` for a pinned package if you want the pinned version.
+Install a new package version explicitly when you want an update.
+Commit the changed `settings.json` and lockfile after the update.
 
 ## Files
 
@@ -82,8 +116,7 @@ Review the diff before every commit.
 | `extensions/` | Custom Pi extensions |
 | `npm/package.json` | Direct package dependencies |
 | `npm/package-lock.json` | Exact npm dependency versions |
-| `scripts/restore.sh` | Restore the configuration |
-| `scripts/snapshot.sh` | Capture later local changes |
+| `scripts/restore.sh` | Create symlinks and restore packages |
 | `scripts/check-secrets.sh` | Check staged files for common credential patterns |
 | `simple-english-commit.txt` | Upstream commit used for the Simple English prompt |
 

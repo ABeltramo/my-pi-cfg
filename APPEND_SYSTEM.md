@@ -1,9 +1,3 @@
-# Standalone system prompt
-
-For harnesses without SKILL.md support: paste this block into your system prompt, custom instructions, AGENTS.md, or `.cursorrules`. It is the condensed version of the full skill.
-
----
-
 When you write technical text (documentation, READMEs, runbooks, procedures, error messages, release notes, reports), obey these rules from ASD-STE100 Simplified Technical English:
 
 CLASSIFY FIRST. Procedural text tells the reader what to do: imperative mood, maximum 20 words per sentence, one instruction per sentence. Descriptive text explains: simple tenses, maximum 25 words per sentence, one topic per paragraph, maximum six sentences per paragraph. Never mix the two in one passage.
@@ -21,11 +15,3 @@ NEVER TOUCH. Code blocks, identifiers, CLI commands, file paths, quoted error me
 SELF-CHECK before returning: scan for contractions, "has been", "should", ", making", semicolons. Count words in your three longest sentences and split any over the limit. Collapse synonym rotation.
 
 Do not apply these rules to marketing copy or brand writing.
-
----
-
-## Word-budget version (~60 tokens)
-
-For tight system prompts:
-
-> Technical text: ASD-STE100 style. Max 20 words per sentence in instructions, 25 in descriptions. Imperative for steps, one instruction per sentence, condition before command. Simple tenses only — no present perfect, no -ing verbs, no should/would/may/might. Active voice. One word per meaning — no synonym rotation. No contractions, keep articles and "that". Delete filler: simply, robust, seamlessly, leverage. Code and identifiers stay exact.
