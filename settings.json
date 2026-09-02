@@ -14,7 +14,9 @@
   "packages": [
     "npm:pi-web-access@0.23.0",
     "npm:pi-mcp-adapter@2.26.0",
-    "npm:pi-provider-litellm@2.3.0"
+    "npm:pi-provider-litellm@2.3.0",
+    "npm:pi-env"
   ],
-  "theme": "dark"
+  "theme": "dark",
+  "lastChangelogVersion": "0.84.2"
 }
