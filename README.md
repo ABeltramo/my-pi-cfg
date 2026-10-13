@@ -16,7 +16,7 @@ The repository does not contain credentials, sessions, caches, or `node_modules`
   - `pi-provider-litellm@2.3.0`
   - `pi-env`, `@guygrigsby/pi-claude-memory`, and `pi-context-usage`
 - MCP: Pi's built-in MCP extension
-- Custom extensions: `confirm-commands` and the Pi port of [claude-status](https://github.com/ABeltramo/claude-status)
+- Custom extension: the Pi port of [claude-status](https://github.com/ABeltramo/claude-status)
 - Global output style: Simple English from [AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish)
 
 Package versions are pinned in `settings.json`.
