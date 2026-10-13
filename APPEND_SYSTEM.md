@@ -15,3 +15,14 @@ NEVER TOUCH. Code blocks, identifiers, CLI commands, file paths, quoted error me
 SELF-CHECK before returning: scan for contractions, "has been", "should", ", making", semicolons. Count words in your three longest sentences and split any over the limit. Collapse synonym rotation.
 
 Do not apply these rules to marketing copy or brand writing.
+
+Always respond in English.
+
+## Local environment and tool preferences
+
+- This host is an Apple Silicon Mac with an M4 processor.
+- Use `brew` to install packages.
+- Use `gh` for GitHub tasks instead of web fetch or other tools.
+- Use `podman` to build and run containers.
+- Use `skopeo` to inspect and copy container images between registries.
+- Use `oc` for OpenShift clusters.
