@@ -1,5 +1,7 @@
-import { basename } from "node:path";
-import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, join } from "node:path";
+import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 type RepoStats = {
@@ -155,8 +157,72 @@ function progressBar(percent: number): string {
   return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
-function compactMcpStatus(status: string): string {
-  return status.replace(/((?:🔌\s+)?MCP:)\s*(\d+)\s+servers?\s+enabled/, "$1$2");
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readMcpServers(path: string): Map<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+    if (isRecord(parsed) && isRecord(parsed.mcpServers)) return new Map(Object.entries(parsed.mcpServers));
+  } catch {
+    // Missing or invalid files do not contribute entries to the displayed count.
+  }
+  return new Map();
+}
+
+function isMcpOverride(config: Record<string, unknown>): boolean {
+  return config.command === undefined && config.url === undefined && config.type === undefined;
+}
+
+function isEnabledMcpServer(config: unknown): boolean {
+  if (!isRecord(config) || (config.enabled !== undefined && typeof config.enabled !== "boolean")) return false;
+  if (config.enabled === false) return false;
+
+  const hasCommand = typeof config.command === "string" && config.command.length > 0;
+  const hasUrl = typeof config.url === "string" && config.url.length > 0;
+  if (hasCommand === hasUrl) return false;
+  if (config.type === undefined) return true;
+  if (config.type === "stdio") return hasCommand;
+  return (config.type === "http" || config.type === "streamable-http") && hasUrl;
+}
+
+function enabledMcpServerCount(pi: ExtensionAPI, ctx: ExtensionContext): number {
+  const agentDir = process.env.PI_CODING_AGENT_DIR || join(homedir(), ".pi", "agent");
+  const servers = readMcpServers(join(agentDir, "mcp.json"));
+
+  if (ctx.isProjectTrusted()) {
+    for (const [name, value] of readMcpServers(join(ctx.cwd, ".pi", "mcp.json"))) {
+      if (!isRecord(value)) continue;
+      if (isMcpOverride(value)) {
+        const base = servers.get(name);
+        const allowedKeys = new Set(["enabled", "exposure", "toolExposure"]);
+        if (isRecord(base) && Object.keys(value).every((key) => allowedKeys.has(key))) {
+          servers.set(name, { ...base, ...value });
+        }
+      } else {
+        servers.set(name, value);
+      }
+    }
+  }
+
+  const namespace = (name: string) => name.replace(/-/g, "_");
+  const existingNamespaces = new Set([...servers.keys()].map(namespace));
+  for (const { name, config } of pi.getMcpServers()) {
+    if (existingNamespaces.has(namespace(name))) continue;
+    servers.set(name, config);
+    existingNamespaces.add(namespace(name));
+  }
+
+  const countedNamespaces = new Set<string>();
+  let count = 0;
+  for (const [name, config] of servers) {
+    const key = namespace(name);
+    if (countedNamespaces.has(key)) continue;
+    countedNamespaces.add(key);
+    if (isEnabledMcpServer(config)) count += 1;
+  }
+  return count;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -167,6 +233,12 @@ export default function (pi: ExtensionAPI) {
   let monthRefreshActive = false;
   let lastMonthRefresh = 0;
   let lastMonthRefreshKey = "";
+  let enabledMcpServers = 0;
+
+  const refreshMcpCount = (ctx: ExtensionContext) => {
+    enabledMcpServers = enabledMcpServerCount(pi, ctx);
+    requestRender();
+  };
 
   const refreshRepo = async (cwd: string) => {
     if (repoRefreshActive) return;
@@ -210,8 +282,10 @@ export default function (pi: ExtensionAPI) {
         void refreshRepo(ctx.cwd);
       });
       const gitTimer = setInterval(() => void refreshRepo(ctx.cwd), GIT_REFRESH_MS);
+      const mcpTimer = setInterval(() => refreshMcpCount(ctx), GIT_REFRESH_MS);
       const monthTimer = setInterval(() => void refreshMonths(), MONTH_REFRESH_MS);
 
+      refreshMcpCount(ctx);
       void refreshRepo(ctx.cwd);
       void refreshMonths(true);
 
@@ -230,6 +304,7 @@ export default function (pi: ExtensionAPI) {
       return {
         dispose() {
           clearInterval(gitTimer);
+          clearInterval(mcpTimer);
           clearInterval(monthTimer);
           stopBranchWatch();
           requestRender = () => {};
@@ -239,8 +314,7 @@ export default function (pi: ExtensionAPI) {
           const branch = footerData.getGitBranch();
           const project = basename(ctx.cwd) || ctx.cwd;
           const extensionStatuses = Array.from(footerData.getExtensionStatuses().values()).filter(Boolean);
-          const mcpStatus = extensionStatuses.find((status) => status.includes("MCP:"));
-          const otherExtensionStatuses = extensionStatuses.filter((status) => status !== mcpStatus);
+          const otherExtensionStatuses = extensionStatuses.filter((status) => !status.includes("MCP:"));
           let repo = project;
           if (branch) {
             repo += ` ${theme.fg("accent", branch)}`;
@@ -250,7 +324,7 @@ export default function (pi: ExtensionAPI) {
               repo += ` ${repoStats.files}f ${theme.fg("success", `+${repoStats.added}`)} ${theme.fg("error", `-${repoStats.deleted}`)}`;
             }
           }
-          if (mcpStatus) repo += ` · ${compactMcpStatus(mcpStatus)}`;
+          repo += ` · 🔌 MCP ${enabledMcpServers} enabled`;
 
           const model = ctx.model?.name ?? ctx.model?.id ?? "no-model";
           const effort = ctx.thinkingLevel ?? "default";
@@ -289,6 +363,7 @@ export default function (pi: ExtensionAPI) {
     });
   });
 
+  pi.on("mcp_servers_change", (_event, ctx) => refreshMcpCount(ctx));
   pi.on("model_select", () => requestRender());
   pi.on("thinking_level_select", () => requestRender());
   pi.on("turn_end", () => {

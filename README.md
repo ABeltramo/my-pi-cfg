@@ -12,9 +12,10 @@ The repository does not contain credentials, sessions, caches, or `node_modules`
 - Default thinking level: `xhigh`
 - Theme: `dark`
 - Installed Pi packages:
-  - `pi-web-access@0.23.0`
-  - `pi-mcp-adapter@2.26.0`
+  - `pi-web-access@0.40.0`
   - `pi-provider-litellm@2.3.0`
+  - `pi-env`, `@guygrigsby/pi-claude-memory`, and `pi-context-usage`
+- MCP: Pi's built-in MCP extension
 - Custom extensions: `confirm-commands` and the Pi port of [claude-status](https://github.com/ABeltramo/claude-status)
 - Global output style: Simple English from [AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish)
 
@@ -23,6 +24,8 @@ The exact npm dependency tree is in `npm/package-lock.json`.
 
 The `claude-status` project targets Claude Code and consumes Claude statusline JSON.
 `extensions/claude-status.ts` provides the equivalent Pi footer.
+Its repo row shows the count of enabled MCP servers from user, trusted project, and extension configuration.
+The count does not report connection or authentication state. The `/mcp` view and `pi mcp list` command report connection state.
 Its cost segment shows `session`, `pi`, `claude`, and combined `total` monthly spend.
 It uses Pi session data for the current session, model, and context values.
 It uses `ccusage --by-agent` for both monthly cost values.
