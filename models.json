@@ -10,8 +10,130 @@
         },
         "gpt-5.6-terra": {
           "contextWindow": 1050000
+        },
+        "gpt-6-luna": {
+          "contextWindow": 1050000
+        },
+        "gpt-6-sol": {
+          "contextWindow": 1050000
+        },
+        "gpt-6-terra": {
+          "contextWindow": 1050000
+        },
+        "gpt-6.1-sol": {
+          "contextWindow": 1050000
         }
       }
+    },
+    "enmaas": {
+      "baseUrl": "https://api.enmaas.devshift.net/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "rits/zai-org/glm-5-3",
+          "name": "GLM 5.3",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": null,
+            "high": "high",
+            "xhigh": null,
+            "max": "max"
+          },
+          "input": [
+            "text"
+          ],
+          "contextWindow": 1048576,
+          "maxTokens": 65536,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "compat": {
+            "supportsDeveloperRole": false
+          }
+        }
+      ]
+    },
+    "modelscorp-nemotron": {
+      "baseUrl": "https://nemotron-super-120b-bf16-ga--apicast-production.apps.int.stc.ai.prod.us-east-1.aws.paas.redhat.com:443/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+          "name": "Nemotron Super 120B (models.corp)",
+          "reasoning": false,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 131072,
+          "maxTokens": 16384,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "compat": {
+            "supportsDeveloperRole": false
+          }
+        }
+      ]
+    },
+    "modelscorp-qwen": {
+      "baseUrl": "https://qwen3-8-27b-fp8--apicast-production.apps.int.stc.ai.prod.us-east-1.aws.paas.redhat.com:443/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "Qwen/Qwen3.8-27B-FP8",
+          "name": "Qwen3.8 27B FP8 (models.corp)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 262144,
+          "maxTokens": 8192,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "compat": {
+            "thinkingFormat": "qwen-chat-template",
+            "supportsDeveloperRole": false
+          }
+        }
+      ]
+    },
+    "modelscorp-gpt-oss-20b": {
+      "baseUrl": "https://gpt-oss-20b--apicast-production.apps.int.stc.ai.prod.us-east-1.aws.paas.redhat.com:443/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "openai/gpt-oss-20b",
+          "name": "GPT-OSS 20B (models.corp)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 125000,
+          "maxTokens": 16384,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "compat": {
+            "supportsReasoningEffort": true
+          }
+        }
+      ]
     },
     "litellm": {
       "modelOverrides": {

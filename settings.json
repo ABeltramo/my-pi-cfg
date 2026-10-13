@@ -1,7 +1,6 @@
 {
-  "defaultModel": "gpt-5.6-luna",
+  "defaultModel": "gpt-6-luna",
   "defaultProvider": "openai",
-  "defaultThinkingLevel": "xhigh",
   "hideThinkingBlock": false,
   "litellm": {
     "mcp": {
@@ -11,12 +10,17 @@
       "enabled": false
     }
   },
+  "modelThinkingLevels": {
+    "enmaas/rits/zai-org/glm-5-3": "low",
+    "openai/gpt-6-luna": "high"
+  },
   "packages": [
-    "npm:pi-web-access@0.23.0",
-    "npm:pi-mcp-adapter@2.26.0",
+    "npm:pi-web-access@0.40.0",
     "npm:pi-provider-litellm@2.3.0",
-    "npm:pi-env"
+    "npm:pi-env",
+    "npm:@guygrigsby/pi-claude-memory",
+    "npm:pi-context-usage"
   ],
   "theme": "dark",
-  "lastChangelogVersion": "0.84.2"
+  "lastChangelogVersion": "1.1.0"
 }
