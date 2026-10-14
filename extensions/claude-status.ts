@@ -17,6 +17,11 @@ type MonthTotals = {
   claude: number;
 };
 
+type ThroughputStats = {
+  outputTokens: number;
+  decodeMs: number;
+};
+
 const EMPTY_REPO: RepoStats = {
   files: 0,
   added: 0,
@@ -152,6 +157,12 @@ async function loadRepoStats(pi: ExtensionAPI, cwd: string): Promise<RepoStats> 
   return stats;
 }
 
+function formatTokensPerSecond(stats: ThroughputStats): string | null {
+  if (stats.decodeMs < 500 || stats.outputTokens <= 0) return null;
+  const tokensPerSecond = (stats.outputTokens / stats.decodeMs) * 1000;
+  return `${Math.round(tokensPerSecond)} tok/s`;
+}
+
 function progressBar(percent: number): string {
   const filled = Math.max(0, Math.min(10, Math.floor(percent / 10)));
   return "█".repeat(filled) + "░".repeat(10 - filled);
@@ -234,6 +245,8 @@ export default function (pi: ExtensionAPI) {
   let lastMonthRefresh = 0;
   let lastMonthRefreshKey = "";
   let enabledMcpServers = 0;
+  let throughput: ThroughputStats = { outputTokens: 0, decodeMs: 0 };
+  let decodeStart = 0;
 
   const refreshMcpCount = (ctx: ExtensionContext) => {
     enabledMcpServers = enabledMcpServerCount(pi, ctx);
@@ -328,6 +341,7 @@ export default function (pi: ExtensionAPI) {
 
           const model = ctx.model?.name ?? ctx.model?.id ?? "no-model";
           const effort = ctx.thinkingLevel ?? "default";
+          const tokensPerSecond = formatTokensPerSecond(throughput);
           const usage = ctx.getContextUsage();
           const contextWindow = usage?.contextWindow ?? ctx.model?.contextWindow ?? 0;
           const percent = usage?.percent == null ? 0 : Math.max(0, Math.min(100, Math.floor(usage.percent)));
@@ -344,7 +358,8 @@ export default function (pi: ExtensionAPI) {
           let costs = `${theme.fg("warning", "💰")} session ${formatUsd(session)} · pi ${piText} · claude ${claudeText} · ${theme.fg(costColor, `total ${totalText}`)}/${formatUsd(MONTHLY_CAP)}`;
           if (otherExtensionStatuses.length > 0) costs += ` · ${otherExtensionStatuses.join(" · ")}`;
 
-          const stats = `${model} ${effort} ${theme.fg("dim", "│")} ${theme.fg(barColor, `${progressBar(percent)} ${contextText}`)} ${theme.fg("dim", "│")} ${costs}`;
+          const rateLabel = tokensPerSecond === null ? "" : ` ${theme.fg("dim", `(${tokensPerSecond})`)}`;
+          const stats = `${model} ${effort}${rateLabel} ${theme.fg("dim", "│")} ${theme.fg(barColor, `${progressBar(percent)} ${contextText}`)} ${theme.fg("dim", "│")} ${costs}`;
           const rows = [repo, stats];
           if (width < 26) return rows.map((row) => truncateToWidth(row, width, ""));
 
@@ -364,8 +379,28 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("mcp_servers_change", (_event, ctx) => refreshMcpCount(ctx));
-  pi.on("model_select", () => requestRender());
+  pi.on("model_select", () => {
+    throughput = { outputTokens: 0, decodeMs: 0 };
+    requestRender();
+  });
   pi.on("thinking_level_select", () => requestRender());
+  pi.on("message_update", (event) => {
+    if (event.message.role !== "assistant" || decodeStart !== 0) return;
+    decodeStart = Date.now();
+  });
+  pi.on("message_end", (event) => {
+    if (event.message.role === "assistant") {
+      const output = event.message.usage?.output;
+      if (decodeStart !== 0 && typeof output === "number" && output > 0) {
+        throughput = {
+          outputTokens: throughput.outputTokens + output,
+          decodeMs: throughput.decodeMs + (Date.now() - decodeStart),
+        };
+      }
+      decodeStart = 0;
+      requestRender();
+    }
+  });
   pi.on("turn_end", () => {
     requestRender();
     void refreshMonths();
