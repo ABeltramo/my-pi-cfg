@@ -1,6 +1,6 @@
 {
-  "defaultModel": "gpt-6-luna",
-  "defaultProvider": "openai",
+  "defaultModel": "rits/zai-org/glm-5-3",
+  "defaultProvider": "enmaas",
   "hideThinkingBlock": false,
   "litellm": {
     "mcp": {
@@ -22,5 +22,8 @@
     "npm:pi-context-usage"
   ],
   "theme": "dark",
-  "lastChangelogVersion": "1.1.0"
+  "fullscreenCopyOnSelect": false,
+  "lastChangelogVersion": "1.1.0",
+  "enableInstallTelemetry": false,
+  "tuiMode": "regular"
 }
